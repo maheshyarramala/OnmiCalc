@@ -1,0 +1,32 @@
+{
+  "source": "code-archive: Calculator-main.zip (OmniCalc, native Android Kotlin/Jetpack Compose app)",
+  "decisions": [
+    "Native Android app rebuilt as a mobile-first web app (Lovable builds web apps only).",
+    "Source had no server, no accounts and stored everything on the phone (Room/SQLite). Web version keeps data on the device (browser storage) to match. Lovable Cloud with sign-in and cross-device sync is offered to the user; not yet decided."
+  ],
+  "capabilities": [
+    {"capability": "code: app shell (top bar, bottom nav, hub sheet, history, favorites, theme sheet, about/terms/privacy/donate dialogs)", "source": "ui/MainScreen.kt, ui/components/AppInfoDialog.kt", "outcome": "rebuilt", "status": "verified", "next_action": "none"},
+    {"capability": "code: Finance hub (expenses, income, accounts, categories, budget, subscriptions, credit card reminders, lend & borrow, trips)", "source": "ui/screens/finance, ui/screens/debt, data/repository", "outcome": "rebuilt", "status": "verified", "next_action": "none"},
+    {"capability": "code: EMI calculator, loan prepayment, active loans tracker", "source": "ui/screens/emi, ui/screens/loan", "outcome": "rebuilt; EMI payment logs linked expense, delete reverts", "status": "verified", "next_action": "none"},
+    {"capability": "code: investment calculators (SIP, lump sum, compound, PPF, FD, trade P&L)", "source": "ui/screens/investment", "outcome": "rebuilt", "status": "verified", "next_action": "none"},
+    {"capability": "code: scientific calculator, interest methods, age & calendar", "source": "ui/screens/calculator, interest, agecalendar", "outcome": "rebuilt", "status": "verified", "next_action": "none"},
+    {"capability": "code: utilities (currency, units, split bill with debt simplifier & receipt text parser, GST)", "source": "ui/screens/utility, ui/screens/splitbill", "outcome": "rebuilt", "status": "verified", "next_action": "none"},
+    {"capability": "code: home dashboard", "source": "ui/screens/home", "outcome": "rebuilt", "status": "verified", "next_action": "none"},
+    {"capability": "schema: Room tables (calculation_history, debts, expense_categories, expenses, bank_accounts, credit_card_bill_reminders, trips, subscriptions, loans)", "source": "data/local/entity", "outcome": "recreated as on-device store with same fields and defaults", "status": "verified", "next_action": "move to Lovable Cloud only if the user wants sign-in/sync"},
+    {"capability": "records: existing user data", "source": "on each phone; exportable via in-app Backup / Restore JSON (v3)", "outcome": "import via Backup / Restore in the web app (Android v3 file format verified with a sample file)", "status": "pending", "next_action": "user exports backup file from the Android app and restores it in the web app"},
+    {"capability": "auth identities", "source": "none (app has no accounts)", "outcome": "not applicable", "status": "accepted", "next_action": "none"},
+    {"capability": "authorization", "source": "none (single-user device app)", "outcome": "not applicable", "status": "accepted", "next_action": "none"},
+    {"capability": "uploaded file bytes / storage", "source": "none (receipt photo picker in source was a demo simulation)", "outcome": "receipt text paste + sample receipts", "status": "accepted", "next_action": "none"},
+    {"capability": "theme settings (system/light/dark/AMOLED, 6 accent palettes, haptics)", "source": "ui/theme", "outcome": "rebuilt; haptics via browser vibration where supported", "status": "verified", "next_action": "none"},
+    {"capability": "privacy mode (hide amounts)", "source": "CurrencyFormatter", "outcome": "rebuilt", "status": "verified", "next_action": "none"},
+    {"capability": "PDF report", "source": "domain/report/PdfReportGenerator.kt", "outcome": "printable report (browser Save as PDF)", "status": "accepted", "next_action": "none"},
+    {"capability": "bank SMS parser", "source": "domain/finance/BankSmsParser.kt", "outcome": "paste SMS text to auto-fill (browsers cannot read SMS)", "status": "accepted", "next_action": "none"},
+    {"capability": "schedules: credit card / EMI / subscription notifications", "source": "domain/notification (WorkManager)", "outcome": "in-app due alerts; background phone notifications not available on web", "status": "accepted", "next_action": "none"},
+    {"capability": "UPI / PayPal payment links", "source": "domain/splitbill/PaymentDeepLinkHelper.kt", "outcome": "rebuilt as links", "status": "verified", "next_action": "none"},
+    {"capability": "external providers / secrets", "source": ".env.example GEMINI_API_KEY (commented out, no call sites)", "outcome": "none used", "status": "accepted", "next_action": "none"},
+    {"capability": "public endpoints, callbacks, webhooks", "source": "none", "outcome": "not applicable", "status": "accepted", "next_action": "none"},
+    {"capability": "Android APK build workflow", "source": ".github/workflows/build-apk.yml", "outcome": "not applicable to web", "status": "accepted", "next_action": "none"},
+    {"capability": "cutover", "source": "-", "outcome": "publish web app; users move data via backup file", "status": "pending", "next_action": "user publishes when ready"},
+    {"capability": "verification", "source": "-", "outcome": "typecheck clean, 20 tests pass, all screens load without errors, backup restore + expense + EMI pay/undo + reload persistence checked in browser", "status": "verified", "next_action": "none"}
+  ]
+}

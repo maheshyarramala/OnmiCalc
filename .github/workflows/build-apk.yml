@@ -1,0 +1,78 @@
+name: Build and Release Android APK
+
+on:
+  push:
+    branches:
+      - main       # Change to 'master' if your default branch is master
+
+permissions:
+  contents: write
+
+jobs:
+  build-android:
+    name: Build & Publish APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Set up Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Read App Name and Version
+        id: app_meta
+        run: |
+          APP_NAME=$(node -p "require('./package.json').name || 'omnicalc'")
+          APP_VERSION=$(node -p "require('./package.json').version || '1.0.0'")
+          BUILD_TAG="v${APP_VERSION}-build.${{ github.run_number }}"
+          echo "APP_NAME=$APP_NAME" >> $GITHUB_ENV
+          echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
+          echo "BUILD_TAG=$BUILD_TAG" >> $GITHUB_ENV
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Web Application
+        run: npm run build
+
+      - name: Sync Capacitor to Android
+        run: npx cap sync android
+
+      - name: Grant Execute Permissions to Gradle
+        run: chmod +x ./gradlew
+        working-directory: android
+
+      - name: Assemble Debug APK
+        run: ./gradlew assembleDebug
+        working-directory: android
+
+      - name: Rename Output APK
+        run: |
+          SRC="android/app/build/outputs/apk/debug/app-debug.apk"
+          DEST="android/app/build/outputs/apk/debug/${{ env.APP_NAME }}-v${{ env.APP_VERSION }}-b${{ github.run_number }}.apk"
+          mv "$SRC" "$DEST"
+          echo "APK_PATH=$DEST" >> $GITHUB_ENV
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.BUILD_TAG }}
+          name: "${{ env.APP_NAME }} v${{ env.APP_VERSION }} (Build #${{ github.run_number }})"
+          body: |
+            ### Automated Build
+            - **Commit:** `${{ github.sha }}`
+            - **App Version:** `${{ env.APP_VERSION }}`
+            - **Build Number:** `${{ github.run_number }}`
+          files: ${{ env.APK_PATH }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
