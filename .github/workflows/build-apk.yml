@@ -40,10 +40,21 @@ jobs:
           echo "BUILD_TAG=$BUILD_TAG" >> $GITHUB_ENV
 
       - name: Install Dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Build Web Application
         run: npm run build
+
+      - name: Verify Web Assets Directory Exists
+        run: |
+          if [ -d "dist" ]; then
+            echo "Directory 'dist' found."
+            ls -la dist
+          else
+            echo "::error::'dist' folder not found after running 'npm run build'! Checking root files..."
+            ls -la
+            exit 1
+          fi
 
       - name: Sync Capacitor to Android
         run: npx cap sync android
