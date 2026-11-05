@@ -47,11 +47,11 @@ jobs:
 
       - name: Verify Web Assets Directory Exists
         run: |
-          if [ -d "dist" ]; then
-            echo "Directory 'dist' found."
-            ls -la dist
+          if [ -d ".output/public" ]; then
+            echo "Directory '.output/public' found."
+            ls -la .output/public
           else
-            echo "::error::'dist' folder not found after running 'npm run build'! Checking root files..."
+            echo "::error::'.output/public' folder not found after running 'npm run build'!"
             ls -la
             exit 1
           fi
