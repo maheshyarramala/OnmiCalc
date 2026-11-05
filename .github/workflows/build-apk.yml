@@ -43,15 +43,55 @@ jobs:
         run: npm install --legacy-peer-deps
 
       - name: Build Web Application
-        run: npm run build
-
-      - name: Verify Web Assets Directory Exists
         run: |
-          if [ -d ".output/public" ]; then
-            echo "Directory '.output/public' found."
+          npm run build
+
+          echo "=== Content of .output ==="
+          ls -R .output || true
+
+          if [ ! -f ".output/public/index.html" ]; then
+            echo "index.html missing in .output/public. Searching for generated html files..."
+            find . -name "index.html" -not -path "*/node_modules/*" -not -path "*/android/*" || true
+
+            if [ -f "dist/index.html" ]; then
+              mkdir -p .output/public
+              cp -r dist/* .output/public/
+            elif [ -f "index.html" ]; then
+              mkdir -p .output/public
+              cp index.html .output/public/
+            fi
+          fi
+
+          if [ ! -f ".output/public/index.html" ]; then
+            echo "No static index.html template found. Rendering the root route from the built application..."
+            node --input-type=module <<'NODE'
+          import { writeFile } from "node:fs/promises";
+          import worker from "./.output/server/index.mjs";
+
+          const response = await worker.fetch(
+            new Request("http://localhost/"),
+            {},
+            { waitUntil() {} },
+          );
+          if (!response.ok) {
+            throw new Error(`Root route rendering failed with status ${response.status}`);
+          }
+
+          const html = await response.text();
+          if (!html.includes("<html")) {
+            throw new Error("Root route rendering did not return an HTML document");
+          }
+          await writeFile(".output/public/index.html", html);
+          NODE
+          fi
+
+      - name: Verify index.html Exists
+        run: |
+          if [ -f ".output/public/index.html" ]; then
+            echo "Found .output/public/index.html"
             ls -la .output/public
           else
-            echo "::error::'.output/public' folder not found after running 'npm run build'!"
+            echo "::error::Could not find index.html in .output/public!"
             ls -la
             exit 1
           fi
